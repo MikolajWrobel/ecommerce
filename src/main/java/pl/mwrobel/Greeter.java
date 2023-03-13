@@ -1,4 +1,4 @@
-package mwrobel;
+package pl.mwrobel;
 
 public class Greeter {
 

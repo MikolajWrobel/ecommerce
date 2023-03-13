@@ -1,4 +1,4 @@
-package mwrobel;
+package pl.mwrobel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
