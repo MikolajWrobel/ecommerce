@@ -5,47 +5,37 @@ import java.math.BigDecimal;
 public class CreditCard {
     private BigDecimal balance;
     private BigDecimal credit;
-    public CreditCard(String cardNumber){
+
+    public CreditCard(String cardNumber) {
 
     }
-    public void assignCredit(BigDecimal creditAmount){
-        if (isBelowThreshold(creditAmount)) {
-            throw new CreditLimitBelowThresholdException();
+
+    public void assignCredit(BigDecimal creditAmount) {
+        if (isCreditAlreadyAssigned()) {
+            throw new ReassignCreditExceptions();
         }
 
-        if (isAlreadyAssigned()) {
-            throw new ItCantAssignLimitTwiceException();
-        }
-            this.credit = creditAmount;
-            this.balance = creditAmount;
-    }
-
-    public void Withdraw(BigDecimal withdrawAmount){
-        if (withdrawAmount.compareTo(getCredit()) > 0){
-            throw new CantWithdrawLowerThanLimit();
-        } else {
-            this.balance.subtract(withdrawAmount) ;
+        if (isCreditBelowThreshold(creditAmount)) {
+            throw new CreditBelowThresholdException();
         }
 
+        this.balance = creditAmount;
+        this.credit = creditAmount;
     }
 
-    private boolean isAlreadyAssigned() {
-        return this.getCredit() != null;
+    private boolean isCreditAlreadyAssigned() {
+        return credit != null;
     }
 
-    private static boolean isBelowThreshold(BigDecimal creditAmount) {
+    private boolean isCreditBelowThreshold(BigDecimal creditAmount) {
         return creditAmount.compareTo(BigDecimal.valueOf(100)) < 0;
     }
 
-    public BigDecimal getBalance(){
+    public BigDecimal getCurrentBalance() {
         return balance;
     }
 
-    public BigDecimal getCredit() {
-        return credit;
+    public void withdraw(BigDecimal value) {
+        this.balance = balance.subtract(value);
     }
-
-
-
-
 }

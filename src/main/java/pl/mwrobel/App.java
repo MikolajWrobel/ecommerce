@@ -1,44 +1,79 @@
 package pl.mwrobel;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
+import pl.mwrobel.payu.PayU;
+import pl.mwrobel.payu.PayUApiCredentials;
+import pl.mwrobel.productcatalog.HashMapProductStorage;
+import pl.mwrobel.productcatalog.ProductCatalog;
+import pl.mwrobel.sales.Sales;
+import pl.mwrobel.sales.cart.CartStorage;
+import pl.mwrobel.sales.offering.OfferCalculator;
+import pl.mwrobel.sales.payment.PaymentGateway;
+import pl.mwrobel.sales.payment.PayuPaymentGateway;
+import pl.mwrobel.sales.productdetails.InMemoryProductDetailsProvider;
+import pl.mwrobel.sales.productdetails.ProductCatalogProductDetailsProvider;
+import pl.mwrobel.sales.productdetails.ProductDetailsProvider;
+import pl.mwrobel.sales.reservation.InMemoryReservationStorage;
+import pl.mwrobel.web.SessionCurrentCustomerContext;
+
+import javax.servlet.http.HttpSession;
+import java.math.BigDecimal;
+
+@SpringBootApplication
 public class App {
+    public static void main(String[] args) {
+        SpringApplication.run(App.class, args);
+    }
 
-    public static void main(String[] args){
+    @Bean
+    ProductCatalog createNewProductCatalog() {
+        ProductCatalog productCatalog = new ProductCatalog(new HashMapProductStorage());
 
-        List<String> names = Arrays.asList("Jakub", "Michał", "Agnieszka", "Kasia");
-        String[] namesAsArray = {"Jakub"};
+        String productId1 = productCatalog.addProduct("Applying UML and Patterns", "Craig Larman");
+        productCatalog.assignImage(productId1, "/image/book_1.jpg");
+        productCatalog.changePrice(productId1, BigDecimal.TEN);
+        productCatalog.publishProduct(productId1);
 
+        String productId2 = productCatalog.addProduct("Clean Code", "Robert Martin");
+        productCatalog.assignImage(productId2, "/image/book_2.jpg");
+        productCatalog.changePrice(productId2, BigDecimal.valueOf(20.20));
+        productCatalog.publishProduct(productId2);
 
-        Greeter greeter = new Greeter();
-        greeter.greet("Jakub"); // Hello Jakub
+        String productId3 = productCatalog.addProduct("Domain-Driven Design", "Eric Evans");
+        productCatalog.assignImage(productId3, "/image/book_3.jpg");
+        productCatalog.changePrice(productId3, BigDecimal.valueOf(30.30));
+        productCatalog.publishProduct(productId3);
 
-        List<String> ladies = new ArrayList<String>();
+        return productCatalog;
+    }
 
-        for (String name: names) {
-            if (name.endsWith("a")){
-                ladies.add(name);
+    @Bean
+    PaymentGateway createPaymentGateway() {
+        return new PayuPaymentGateway(new PayU(PayUApiCredentials.sandbox(), new RestTemplate()));
+    }
 
-            }
-        }
+    @Bean
+    Sales createSales(ProductDetailsProvider productDetailsProvider, PaymentGateway paymentGateway) {
+        return new Sales(
+                new CartStorage(),
+                productDetailsProvider,
+                new OfferCalculator(productDetailsProvider),
+                paymentGateway,
+                new InMemoryReservationStorage()
+        );
+    }
 
-        for (String ladyName: ladies) {
-            greeter.greet(ladyName);
-        }
+    @Bean
+    SessionCurrentCustomerContext currentCustomerContext(HttpSession httpSession) {
+        return new SessionCurrentCustomerContext(httpSession);
+    }
 
-        names.stream()
-                .filter(name -> name.endsWith("a")) // lambda name: name[-1] == "a"
-                .filter(name -> name.startsWith("A"))
-                .map(String::toUpperCase)
-                .forEach(greeter::greet);
-
-
-        //greet just ladies
-        //Hello Agnieszka
-        //Hello Kasia
-
-        System.out.println("Hello World");
+    @Bean
+    ProductDetailsProvider createProductDetailsProvider(ProductCatalog catalog) {
+        return new ProductCatalogProductDetailsProvider(catalog);
     }
 }
